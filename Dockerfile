@@ -1,17 +1,22 @@
 FROM ruby:2.7.1
 
-MAINTAINER Bogumil Wrona <bogumil@code-pan.com>
+LABEL maintainer="Bogumil Wrona <bogumil@code-pan.com>"
+
+RUN apt-get update -qq && \
+    apt-get install -y build-essential libpq-dev nodejs
 
 RUN mkdir /app
 WORKDIR /app
 
-# Upgrade RubyGems to meet ffi dependency requirement
 RUN gem update --system 3.3.22
 
-ADD Gemfile /app/Gemfile
-ADD Gemfile.lock /app/Gemfile.lock
+COPY Gemfile Gemfile.lock /app/
 
-RUN gem install bundler:2.3.22
-RUN bundle _2.3.22_ install
+RUN gem install bundler -v 2.3.22
+RUN bundle _2.3.22_ install --jobs 4 --retry 3
 
-ADD . /app
+COPY . /app
+
+EXPOSE 3001
+
+CMD ["bash", "-c", "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0 -p 3001"]
